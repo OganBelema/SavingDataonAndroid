@@ -62,4 +62,12 @@ class MapPresenter(private val repo: DropRepository, private val view: MapContra
   override fun getMarkerColor(): String {
     return MapPrefs.getMarkerColor()
   }
+
+  override fun saveMapType(mapType: String) {
+    MapPrefs.saveMapType(mapType)
+  }
+
+  override fun getMapType(): String {
+    return MapPrefs.getMapType()
+  }
 }

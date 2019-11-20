@@ -48,5 +48,7 @@ interface MapContract {
     fun clearAllDrops()
     fun saveMarkerColor(markerColor: String)
     fun getMarkerColor(): String
+    fun saveMapType(mapType: String)
+    fun getMapType(): String
   }
 }

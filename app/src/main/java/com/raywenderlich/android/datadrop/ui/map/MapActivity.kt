@@ -84,6 +84,8 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
     presenter = Injection.provideMapPresenter(this)
     presenter.start()
 
+    map.mapType = MapType.createMapType(presenter.getMapType()).getGoogleMapType()
+
     mapIsReady = true
   }
 
@@ -223,7 +225,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
       (0 until childCount)
           .map { group.getChildAt(it) as RadioButton }
           .filter { it.id == checkedId }
-          .forEach { println("Selected RadioButton -> ${it.text}") }
+          .forEach {
+            presenter.saveMapType(it.text.toString())
+            map.mapType = MapType.createMapType(presenter.getMapType()).getGoogleMapType()
+          }
     }
 
     dialog.show()
