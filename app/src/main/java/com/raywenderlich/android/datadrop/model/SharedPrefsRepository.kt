@@ -29,10 +29,10 @@ object SharedPrefsRepository: DropRepository {
     }
 
     override fun clearDrop(drop: Drop) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        sharedPrefs().edit().remove(drop.id).apply()
     }
 
     override fun clearAllDrops() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        sharedPrefs().edit().clear().apply()
     }
 }
