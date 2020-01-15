@@ -49,11 +49,22 @@ object FileRepository: DropRepository {
     }
 
     override fun clearDrop(drop: Drop) {
-        dropFile(dropFileName(drop)).delete()
+        try {
+            dropFile(dropFileName(drop)).delete()
+        } catch (exception: IOException){
+            Log.e("FileRepository", "Error deleting specified drop; ${drop.id}")
+        }
+
     }
 
     override fun clearAllDrops() {
-
+        try {
+            val fileList = dropsDirectory().list()
+            fileList.map { dropFile(it).delete() }
+            dropsDirectory().delete()
+        } catch (exception: IOException){
+            Log.e("FileRepository", "Error clearing all drops")
+        }
     }
 
     /**
