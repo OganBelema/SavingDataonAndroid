@@ -1,6 +1,5 @@
 package com.raywenderlich.android.datadrop.model
 
-import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -60,7 +59,13 @@ object FileRepository: DropRepository {
     /**
      * Creates the drop directory
      */
-    private fun dropsDirectory() = getContext().getDir("drops", Context.MODE_PRIVATE)
+    private fun dropsDirectory() : File {
+        val dropDirectory = File(getContext().getExternalFilesDir(null), "drops")
+        if (!dropDirectory.exists()){
+            dropDirectory.mkdirs()
+        }
+        return dropDirectory
+    }
 
     /**
      * Creates a file in the drop directory
