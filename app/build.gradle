@@ -4,6 +4,8 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: 'kotlin-kapt'
+
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
@@ -36,6 +38,17 @@ dependencies {
   implementation 'com.google.android.gms:play-services-maps:11.8.0'
   implementation 'com.android.support.constraint:constraint-layout:1.0.2'
   implementation 'com.google.code.gson:gson:2.8.2'
+
+  //room
+  implementation "android.arch.persistence.room:runtime:$rootProject.roomVersion"
+  annotationProcessor "android.arch.persistence.room:compiler:$rootProject.roomVersion"
+  kapt "android.arch.persistence.room:compiler:$rootProject.roomVersion"
+  androidTestImplementation "android.arch.persistence.room:testing:$rootProject.roomVersion"
+
+  //lifecycle
+  implementation "android.arch.lifecycle:extensions:$rootProject.lifecycleVersion"
+  annotationProcessor "android.arch.lifecycle:compiler:$rootProject.lifecycleVersion"
+
   testImplementation 'junit:junit:4.12'
   androidTestImplementation 'com.android.support.test:runner:1.0.1'
   androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
