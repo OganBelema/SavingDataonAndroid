@@ -31,6 +31,8 @@
 package com.raywenderlich.android.datadrop.ui.map
 
 import android.app.Dialog
+import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -49,14 +51,17 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.raywenderlich.android.datadrop.R
-import com.raywenderlich.android.datadrop.app.Injection
 import com.raywenderlich.android.datadrop.model.Drop
+import com.raywenderlich.android.datadrop.model.MapPrefs
 import com.raywenderlich.android.datadrop.ui.droplist.DropListActivity
+import com.raywenderlich.android.datadrop.viewmodel.ClearAllDropsListener
+import com.raywenderlich.android.datadrop.viewmodel.DropInsertListener
+import com.raywenderlich.android.datadrop.viewmodel.DropsViewModel
 
 
-class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
+class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
-  override lateinit var presenter: MapContract.Presenter
+  private lateinit var dropsViewModel: DropsViewModel
 
   private lateinit var map: GoogleMap
 
@@ -69,6 +74,8 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
     val mapFragment = supportFragmentManager
         .findFragmentById(R.id.map) as SupportMapFragment
     mapFragment.getMapAsync(this)
+
+    dropsViewModel = ViewModelProviders.of(this).get(DropsViewModel::class.java)
   }
 
   override fun onMapReady(googleMap: GoogleMap) {
@@ -81,21 +88,15 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
       showDropDialog(latLng)
     }
 
-    presenter = Injection.provideMapPresenter(this)
-    presenter.start()
+    dropsViewModel.getDrops().observe(this, Observer { drops ->
+      showDrops(drops ?: emptyList())
+    })
 
-    map.mapType = MapType.createMapType(presenter.getMapType()).getGoogleMapType()
+    map.mapType = MapType.createMapType(MapPrefs.getMapType()).getGoogleMapType()
 
     mapIsReady = true
   }
 
-  override fun onResume() {
-    super.onResume()
-
-    if (mapIsReady) {
-      presenter.start()
-    }
-  }
 
   override fun onCreateOptionsMenu(menu: Menu): Boolean {
     super.onCreateOptionsMenu(menu)
@@ -113,11 +114,11 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
     return super.onOptionsItemSelected(item)
   }
 
-  override fun showDrop(drop: Drop) {
+  private fun showDrop(drop: Drop) {
     placeMarkerOnMap(drop.latLng, drop.dropMessage)
   }
 
-  override fun showDrops(drops: List<Drop>) {
+  private fun showDrops(drops: List<Drop>) {
     map.clear()
     drops.forEach { drop ->
       placeMarkerOnMap(drop.latLng, drop.dropMessage)
@@ -127,7 +128,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
   private fun placeMarkerOnMap(location: LatLng, title: String) {
     val markerOptions = MarkerOptions().position(location)
     markerOptions.title(title)
-    val markerColor = MarkerColor.createMarkerColor(presenter.getMarkerColor())
+    val markerColor = MarkerColor.createMarkerColor(MapPrefs.getMarkerColor())
     markerOptions.icon(markerColor.getMarkerBitmapDescriptor())
     map.addMarker(markerOptions)
   }
@@ -190,7 +191,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
       rb.text = markerColor.displayString
       rb.setPadding(48, 48, 48, 48)
       rg.addView(rb)
-      if (presenter.getMarkerColor() == markerColor.displayString){
+      if (MapPrefs.getMarkerColor() == markerColor.displayString){
         rg.check(rb.id)
       }
     }
@@ -200,7 +201,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
       (0 until childCount)
           .map { group.getChildAt(it) as RadioButton }
           .filter { it.id == checkedId }
-          .forEach { presenter.saveMarkerColor(it.text.toString()) }
+          .forEach { MapPrefs.saveMarkerColor(it.text.toString()) }
     }
 
     dialog.show()
@@ -226,8 +227,8 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
           .map { group.getChildAt(it) as RadioButton }
           .filter { it.id == checkedId }
           .forEach {
-            presenter.saveMapType(it.text.toString())
-            map.mapType = MapType.createMapType(presenter.getMapType()).getGoogleMapType()
+            MapPrefs.saveMapType(it.text.toString())
+            map.mapType = MapType.createMapType(MapPrefs.getMapType()).getGoogleMapType()
           }
     }
 
@@ -235,11 +236,18 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, MapContract.View {
   }
 
   private fun addDrop(latLng: LatLng, message: String) {
-    presenter.addDrop(Drop(latLng, message))
+    dropsViewModel.insert(Drop(latLng, message), object : DropInsertListener {
+      override fun dropInserted(drop: Drop) {
+        showDrop(drop)
+      }
+    })
   }
 
   private fun clearAllDrops() {
-    presenter.clearAllDrops()
-    map.clear()
+    dropsViewModel.clearAllDrops(object : ClearAllDropsListener {
+      override fun allDropsCleared() {
+        map.clear()
+      }
+    })
   }
 }
